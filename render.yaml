@@ -1,0 +1,58 @@
+services:
+  - type: web
+    name: bharatkit-api
+    runtime: node
+    plan: free
+    buildCommand: npm install && cd dashboard && npm install && npm run build && cd ..
+    startCommand: npx prisma migrate deploy --schema=prisma/schema.prisma && node src/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bharatkit-db
+          property: connectionString
+      - key: REDIS_HOST
+        value: localhost
+      - key: REDIS_PORT
+        value: 6379
+      - key: JWT_SECRET
+        generateValue: true
+      - key: RAZORPAY_KEY_ID
+        value: rzp_test_placeholder
+      - key: RAZORPAY_KEY_SECRET
+        value: placeholder_secret
+      - key: UIDAI_API_URL
+        value: https://api.uidai.gov.in
+      - key: UIDAI_API_KEY
+        value: sandbox_key
+      - key: GST_API_URL
+        value: https://api.gst.gov.in
+      - key: GST_API_KEY
+        value: sandbox_key
+      - key: DIGILOCKER_CLIENT_ID
+        value: sandbox_client_id
+      - key: DIGILOCKER_CLIENT_SECRET
+        value: sandbox_client_secret
+      - key: ACCOUNT_AGGREGATOR_URL
+        value: https://api.accountaggregator.org.in
+      - key: ACCOUNT_AGGREGATOR_KEY
+        value: sandbox_key
+      - key: SMTP_HOST
+        value: smtp.gmail.com
+      - key: SMTP_PORT
+        value: 587
+      - key: FRONTEND_URL
+        fromService:
+          name: bharatkit-api
+          type: web
+          property: host
+
+databases:
+  - name: bharatkit-db
+    plan: free
+    databaseName: bharatkit
+    user: bharatkit

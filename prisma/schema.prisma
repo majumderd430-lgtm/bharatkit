@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Developer {
+  id                 String    @id @default(uuid())
+  email              String    @unique
+  password           String
+  companyName        String
+  phone              String
+  isActive           Boolean   @default(true)
+  passwordResetToken String?
+  passwordResetExpiry DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  apiKeys   ApiKey[]
+  apiUsage  ApiUsage[]
+  bills     Bill[]
+  auditLogs AuditLog[]
+}
+
+model ApiKey {
+  id          String    @id @default(uuid())
+  developerId String
+  key         String    @unique
+  name        String
+  environment String    // "sandbox" | "production"
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+
+  developer Developer  @relation(fields: [developerId], references: [id])
+  apiUsage  ApiUsage[]
+  auditLogs AuditLog[]
+}
+
+model ApiUsage {
+  id             String   @id @default(uuid())
+  apiKeyId       String
+  developerId    String
+  endpoint       String
+  service        String
+  requestBody    String?  // encrypted
+  responseStatus Int
+  responseTime   Int      // milliseconds
+  cost           Float    @default(0)
+  environment    String   @default("sandbox")
+  createdAt      DateTime @default(now())
+
+  apiKey    ApiKey    @relation(fields: [apiKeyId], references: [id])
+  developer Developer @relation(fields: [developerId], references: [id])
+}
+
+model Bill {
+  id              String    @id @default(uuid())
+  developerId     String
+  month           Int
+  year            Int
+  totalCalls      Int       @default(0)
+  totalCost       Float     @default(0)
+  status          String    @default("pending") // "pending" | "paid" | "failed"
+  razorpayOrderId String?
+  createdAt       DateTime  @default(now())
+  paidAt          DateTime?
+
+  developer Developer @relation(fields: [developerId], references: [id])
+}
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  developerId String
+  apiKeyId    String?
+  action      String
+  ipAddress   String?
+  userAgent   String?
+  metadata    String?
+  createdAt   DateTime @default(now())
+
+  developer Developer @relation(fields: [developerId], references: [id])
+  apiKey    ApiKey?   @relation(fields: [apiKeyId], references: [id])
+}
